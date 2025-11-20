@@ -10,7 +10,7 @@ This repository contains the experimental setup and training pipeline for fine-t
 
 **Research supported with Cloud TPUs from Google's TPU Research Cloud (TRC).**
 
-I want to thank the Google TRC team for providing access to the **TPU v6e-8** hardware, which made this research possible.
+We want to thank the Google TRC team for providing access to the **TPU v6e-8** hardware, which made this research possible.
 
 ## Technical Stack
 ### Finetuning:
@@ -25,7 +25,7 @@ I want to thank the Google TRC team for providing access to the **TPU v6e-8** ha
 
 ## Repository Structure & Automation
 
-I have automated most of the provisioning and setup process using Bash scripts to ensure reproducibility.
+We have automated most of the provisioning and setup process using Bash scripts to ensure reproducibility.
 
 ### 1. TPU Provisioning (`utils/gcloud_tpuvm.sh`)
 
@@ -45,7 +45,7 @@ Once inside the VM, this script handles the dependencies. I utilized `git sparse
 4.  Installs `transformers` and `datasets`.
 5.  Verifies if the XLA devices are visible to PyTorch.
 
-> Note: For public repositories I provided `utils/cloud-clone-public.sh`
+> Note: For public repositories we provid `utils/cloud-clone-public.sh`
 
 ## How to Run
 
@@ -70,7 +70,7 @@ chmod +x cloud-clone.sh
 
 Now you have a directory `llm-finetuning` containing last commit of my repository.
 
-For downloading datasets I used: 
+For downloading our datasets use: 
 ```bash
 cd llm-finetuning/dataset/scripts
 python3 download_qna_dataset.py
@@ -113,7 +113,7 @@ The training loop is engineered specifically for the XLA (Accelerated Linear Alg
 
 ## Results
 
-As a result, I have successfully established a **fully functional, end-to-end fine-tuning pipeline** on Google's cutting-edge **TPU v6e (Trillium)** architecture.
+As a result, we have successfully established a **fully functional, end-to-end fine-tuning pipeline** on Google's cutting-edge **TPU v6e (Trillium)** architecture.
 
 Key achievements include:
 1.  **Infrastructure Validation:** Validated that pure PyTorch workflows (via `torch_xla`) are viable on the latest generation of Cloud TPUs, achieving stable training throughput without relying on high-level frameworks like JAX or TensorFlow.
