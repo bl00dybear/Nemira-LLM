@@ -3,29 +3,28 @@ import torch_xla.core.xla_model as xm
 import torch_xla.runtime as xr 
 import math
 
-# Ce se întâmplă în forward pass:
+# What happens in the forward pass:
 
-# 1. Input la model (ce primește modelul):
-# model_input = input_ids[:-1]  # Toate token-urile EXCEPT ultimul
+# 1. Model input (what the model receives):
+# model_input = input_ids[:-1]  # All tokens EXCEPT the last one
 # [150, 2341, 15678, 234, 8901]
 # Când  sunt  admi   la   FMI
 
-# 2. Predicții (ce generează modelul):
+# 2. Predictions (what the model generates):
 # predictions = model(model_input)
-# Shape: (5, vocab_size) - 5 predicții, una pentru fiecare poziție
+# Shape: (5, vocab_size) - 5 predictions, one for each position
 
-# 3. Target (ce ar trebui să prezică):
-# targets = labels[1:]  # Toate token-urile EXCEPT primul
+# 3. Target (what it should predict):
+# targets = labels[1:]  # All tokens EXCEPT the first one
 # [2341, 15678, 234, 8901, 2]
 # sunt  admi   la   FMI   ?
 
-# 4. Comparație (loss calculation):
-# Poziție 0: input="Când"       → predict="sunt"      vs target="sunt"      ✓
-# Poziție 1: input="sunt"       → predict="admiterile" vs target="admiterile" ✓
-# Poziție 2: input="admiterile" → predict="la"        vs target="la"        ✓
-# Poziție 3: input="la"         → predict="FMI"       vs target="FMI"       ✓
-# Poziție 4: input="FMI"        → predict="?"         vs target="?"         ✓
-
+# 4. Comparison (loss calculation):
+# Position 0: input="Când"       → predict="sunt"      vs target="sunt"      ✓
+# Position 1: input="sunt"       → predict="admiterile" vs target="admiterile" ✓
+# Position 2: input="admiterile" → predict="la"        vs target="la"        ✓
+# Position 3: input="la"         → predict="FMI"       vs target="FMI"       ✓
+# Position 4: input="FMI"        → predict="?"         vs target="?"         ✓
 
 
 def train(model, dataloader, optimizer, device, grad_accum_steps=4, epochs=3, max_grad_norm=1.0,scheduler=None):

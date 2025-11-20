@@ -14,19 +14,17 @@ class LoRALayer(nn.Module):
         self.A = nn.Linear(in_feat, rank, bias=False).to(dtype=self.dtype, device=device)
         self.B = nn.Linear(rank, out_feat, bias=False).to(dtype=self.dtype, device=device)
 
-        # W ~ N(0, sqrt(2/n)) - distributia kaiming
-        # W ~ U(-bound, bound) unde bound = sqrt(6 / ((1 + a²) * fan_in)) - distributia uniforma kaiming
-        # fan_in e nr de inputuri al layerului  Q
-        # dezvoltata pentru a evita gradient vanishing si gradient exploding, optimizata pentu ReLU
+        # W ~ N(0, sqrt(2/n)) - kaiming distribution
+        # W ~ U(-bound, bound) where bound = sqrt(6 / ((1 + a²) * fan_in)) - uniform kaiming distribution
+        # fan_in is the number of inputs of the layer Q
+        # developed to avoid gradient vanishing and gradient exploding, optimized for ReLU
 
         nn.init.kaiming_uniform_(tensor=self.A.weight,mode='fan_in',a=5**0.5)
         nn.init.zeros_(self.B.weight)
 
 
-    # forwardul cu lora functioneaza asa: y = Wx + α/r*B(Ax) (vezi /doc/LoRA.pdf)
+    # forward with lora works like this: y = Wx + α/r*B(Ax) (see /doc/LoRA_ro.pdf)
     def forward(self, orig_output,tensor):
-        # tensor=tensor.to(self.dtype)  nu mai e nevoie deoarece am mutat A si B pe dtype-ul corect la initializare
-
         # tensor shape: (batch, seq_len, in_feat) or (batch*seq_len, in_feat)
         # A shape: (in_feat, rank)
         # B shape: (rank, out_feat)
@@ -39,20 +37,20 @@ class LoRALayer(nn.Module):
 def lora_inject(model,rank,alpha,device):
     dtype=next(model.parameters()).dtype
 
-    # loop care da freeze la parametrii originali ai modelului, deoarece nu vrem sa fie antrenati
+    # loop that freezes the original parameters of the model, because we don't want them to be trained
     for param in model.parameters():
         param.requires_grad = False
 
-    # vezi /doc/mistral7b.md pentru a vedea unde sunt modulele astea, si pe ele adaugam lora deoarece
-    # astea sunt layerele care invata. prioritar sunt modulele din self attention si daca ne permit resursele
-    # adaugam lora si pe MLP (se poate si fara MLP pentru eficienta computationala, dar e trade-off pe performanta)
+    # see /doc/mistral7b.md to see where these modules are, and we add lora to them because
+    # these are the layers that learn. priority are the modules from self attention and if we have enough resources
+    # we add lora to MLP too (it can work without MLP for computational efficiency, but there's a performance trade-off)
     att_modules=["q_proj","v_proj","k_proj","o_proj","gate_proj"]
     mlp_modules=["gate_proj","up_proj","down_proj"]
     lora_layers={}
     layer_index=0
 
-    # /doc/mistral7b.md <-- acolo ai structura modelului, necesara pt a intelege parcurgerea asta de layere si module
-    # lora_layers exista deoarece vrem sa salvam weight urile de dupa antrenament si ele se salveaza dictionar
+    # /doc/mistral7b.md <-- there you have the model structure, necessary to understand this traversal of layers and modules
+    # lora_layers exists because we want to save the weights after training and they are saved as dictionary
     for layer in model.model.layers:
         for layer_module in att_modules:
             if hasattr(layer.self_attn,layer_module):

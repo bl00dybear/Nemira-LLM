@@ -29,12 +29,12 @@ class TextDataset(Dataset):
         labels = input_ids.clone()
         # INPUT:  "Când sunt admiterile la FMI ?"
         # TARGET: "sunt admiterile la FMI ? [EOS]"
-        # (modelul învață să prezică următorul token)
+        # (the model learns to predict the next token)
 
         labels[attention_mask == 0] = -100
-        # Setăm -100 pentru tokenii de padding
-        # PyTorch CrossEntropyLoss IGNORĂ automat label-urile cu valoarea -100
-        # Astfel modelul nu învață din padding!
+        # Set -100 for padding tokens
+        # PyTorch CrossEntropyLoss automatically IGNORES labels with value -100
+        # So the model doesn't learn from padding!
 
         # input_ids:      [150, 2341, 15678, ..., 0,    0,    0   ]
         # attention_mask: [1,   1,    1,     ..., 0,    0,    0   ]

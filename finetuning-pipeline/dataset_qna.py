@@ -28,7 +28,6 @@ def _load_json_or_jsonl(path: str) -> List[Dict[str, Any]]:
     except JSONDecodeError:
         pass
 
-    # Fallback JSONL
     out: List[Dict[str, Any]] = []
     for line in txt.splitlines():
         line = line.strip()
@@ -161,7 +160,6 @@ class InstructionDataset(Dataset):
         prompt_text = ex["prompt"]
         response_text = ex["response"] if ex["response"].strip() else " [OK]"
 
-         # 1) Limitează promptul la (max_len - min_resp_tokens)
         max_prompt_len = max(1, self.max_len - self.min_resp_tokens)
         p = self.tokenizer(
             prompt_text,
@@ -171,7 +169,6 @@ class InstructionDataset(Dataset):
         )
         prompt_ids: List[int] = p["input_ids"]
 
-        # 2) Limitează răspunsul la spațiul rămas
         remain = max(1, self.max_len - len(prompt_ids))
         r = self.tokenizer(
             response_text,
@@ -194,13 +191,11 @@ class InstructionDataset(Dataset):
         input_ids_tensor = torch.tensor(input_ids, dtype=torch.long)
         attention_mask_tensor = torch.tensor(attention_mask, dtype=torch.long)
 
-        # Labels: maschează prompt + padding
         labels = input_ids_tensor.clone()
         prompt_len = min(len(prompt_ids), self.max_len)
         labels[:prompt_len] = -100
         labels[attention_mask_tensor == 0] = -100
 
-        # Dacă nu a rămas nimic antrenabil (răspuns trunchiat complet), injectează un fallback compact
         if (labels != -100).sum().item() == 0:
             fb = self.tokenizer(" [OK]", add_special_tokens=False)["input_ids"]
             pos = prompt_len

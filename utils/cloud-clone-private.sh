@@ -6,10 +6,10 @@ BRANCH_NAME="..."
 
 ssh-keygen -t ed25519 -C "tpu-vm-key" -f ~/.ssh/id_ed25519 -N ""
 cat ~/.ssh/id_ed25519.pub
-read -r -p "Am instalat/adăugat cheia SSH în GitHub? Continuați? [y/N]: " response
+read -r -p "Did I install/add the SSH key to GitHub? Continue? [y/N]: " response
 case "$response" in
     [yY]|[yY][eE][sS]) ;;
-    *) echo "Operațiune anulată."; exit 1;;
+    *) echo "Operation canceled."; exit 1;;
 esac
 mkdir llm-finetuning
 cd llm-finetuning
@@ -26,7 +26,7 @@ git pull origin $BRANCH_NAME --depth=1
 
 python3 -c "import torch_xla.core.xla_model as xm; print(xm.get_xla_supported_devices())"
 
-read -r -p "Instalez torch si pachetele necesare? [y/N]: " response
+read -r -p "Install required dependecies? [y/N]: " response
 case "$response" in
     [yY]|[yY][eE][sS]) 
         pip install --upgrade pip
@@ -37,7 +37,7 @@ case "$response" in
         echo "Testing XLA after installation..."
         python3 -c "import torch_xla.core.xla_model as xm; print(xm.get_xla_supported_devices())"
         ;;
-    *) echo "Operațiune anulată."; exit 1;;
+    *) echo "Canceled"; exit 1;;
 esac
 
 echo "Setup complete!"

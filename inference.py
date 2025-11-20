@@ -40,9 +40,7 @@ def load_model_and_tokenizer(model_dir: str, quant: str):
     return tok, model
 
 def build_inputs(tokenizer, question: str):
-    # Întoarce mereu un dict (BatchEncoding)
     if getattr(tokenizer, "chat_template", None):
-        # Rendăm la text și apoi tokenizăm => compatibil cu toate versiunile HF
         rendered = tokenizer.apply_chat_template(
             [{"role": "user", "content": question}],
             add_generation_prompt=True,
@@ -55,7 +53,6 @@ def build_inputs(tokenizer, question: str):
 def generate_answer(model, tokenizer, question: str, max_new_tokens=256, do_sample=False, temperature=0.7, top_p=0.9):
     inputs = build_inputs(tokenizer, question)
 
-    # Unele versiuni pot întoarce un Tensor; normalizăm la dict
     if isinstance(inputs, torch.Tensor):
         inputs = {"input_ids": inputs}
 
@@ -111,3 +108,72 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+    # INFERENCE PIPELINE SCHEMA
+#
+# 1. LOAD PHASE:
+#    load_model_and_tokenizer()
+#    │
+#    ├── load_bitsandbytes_config(quant_mode)
+#    │   ├── "none" → None (FP16)
+#    │   ├── "8bit" → BitsAndBytesConfig(load_in_8bit=True)
+#    │   └── "4bit" → BitsAndBytesConfig(load_in_4bit=True, nf4, double_quant, float16)
+#    │
+#    ├── AutoTokenizer.from_pretrained()
+#    │   └── set pad_token = eos_token if missing
+#    │
+#    └── AutoModelForCausalLM.from_pretrained()
+#        ├── device_map="auto"
+#        ├── quantization_config (if quant)
+#        └── torch_dtype=float16 (if no quant)
+#
+# 2. INPUT BUILDING:
+#    build_inputs(tokenizer, question)
+#    │
+#    ├── IF tokenizer has chat_template:
+#    │   └── apply_chat_template([{"role": "user", "content": question}])
+#    │       └── tokenize with add_generation_prompt=True
+#    │
+#    └── ELSE:
+#        └── tokenizer(question) directly
+#
+# 3. GENERATION:
+#    generate_answer(model, tokenizer, question, params)
+#    │
+#    ├── build_inputs() → {"input_ids": tensor, "attention_mask": tensor}
+#    ├── move inputs to model device
+#    ├── calculate prompt_len = input_ids.shape[1]
+#    │
+#    └── model.generate(
+#          input_ids, attention_mask,
+#          max_new_tokens=256,
+#          do_sample=True/False,
+#          temperature=0.7,
+#          top_p=0.9,
+#          no_repeat_ngram_size=3,
+#          repetition_penalty=1.1,
+#          eos_token_id=tokenizer.eos_token_id,
+#          pad_token_id=tokenizer.pad_token_id
+#        )
+#        │
+#        └── OUTPUT: gen_ids [batch_size, seq_len]
+#            │
+#            └── extract new_tokens = gen_ids[0, prompt_len:]
+#                └── tokenizer.decode(new_tokens, skip_special_tokens=True)
+#
+# 4. EXECUTION MODES:
+#    main()
+#    │
+#    ├── SINGLE QUESTION:
+#    │   └── python script.py --question "Ce time este?"
+#    │       └── generate_answer() → print answer → exit
+#    │
+#    └── INTERACTIVE MODE:
+#        └── python script.py
+#            └── while True:
+#                ├── input(">> ")
+#                ├── if "exit" → break
+#                └── generate_answer() → print answer
+#
+# KEY FLOW: question → tokenize → model.generate() → decode → answer
