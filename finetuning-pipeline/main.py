@@ -53,7 +53,7 @@ print = _make_ranked_print()
 
 def _resolve_dataset_paths():
     base_cur = Path(__file__).resolve().parent
-    base_sibling = base_cur.parent / "finetuning-data"
+    base_sibling = base_cur.parent / "dataset/data"
     text_candidates = [
         base_cur / "text-data.jsonl",
         base_sibling / "text-data.jsonl",
